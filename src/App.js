@@ -1,12 +1,24 @@
 import "./App.css";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { marked } from "marked";
 import { useLocalstorage } from "./custom/UseLocalstorage";
+import axios from "axios";
+import { ClipLoader } from "react-spinners";
 const App = () => {
   const { setItem, getItem } = useLocalstorage();
 
   const [code, setCode] = useState(getItem() ? getItem() : "## hello");
   const [compiled, setCompiled] = useState('<h2 id="hello">Hello</h2>');
+  const [docsData, setDocsData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    const storedValue = localStorage.getItem("value");
+    if (storedValue) {
+      setCompiled(marked.parse(storedValue));
+    } else {
+      console.log("Value does not exist in localStorage");
+    }
+  }, []);
   const [hide, setHide] = useState({
     markedown: true,
     preview: false,
@@ -42,6 +54,23 @@ const App = () => {
       preview: false,
       docs: true
     });
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(
+        "https://www.markdownguide.org/api/v1/basic-syntax.json"
+        );
+        console.log(response);
+      } catch (error) {
+        console.log("Error fetching data:", error);
+      } finally {
+        setTimeout(() => {
+          setLoading(false);
+        }, 3000);
+      }
+    };
+    fetchData();
   };
   return (
     <>
@@ -63,11 +92,12 @@ const App = () => {
             <textarea value={compiled} />
           </div>
         ) : hide.docs ? (
-          <div>
-            Lorem ipsum dolor, sit amet consectetur adipisicing elit. Sunt
-            exercitationem minus totam et quam in eius voluptates a expedita
-            saepe modi, labore consectetur alias fugiat nihil reiciendis
-            eligendi quos? Quae.
+          <div className="docs">
+            {loading ? (
+              <ClipLoader color="#7f8f8c" size={200} />
+            ) : (
+              <div className="dataContaienr"></div>
+            )}
           </div>
         ) : null}
       </div>
